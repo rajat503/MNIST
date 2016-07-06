@@ -94,9 +94,9 @@ for i in range(16000):
         print("training accuracy %g"%(train_accuracy))
     if i%100 == 0 and i!=0:
         print "loss ", loss_val
-    if i>=15000:
+    if i>=13000:
         _, loss_val = sess.run([train_step3, cross_entropy], feed_dict={x:batch[0], y_: batch[1], keep_prob: 0.5})
-    if i>5000 and i<15000:
+    if i>5000 and i<13000:
         _, loss_val = sess.run([train_step2, cross_entropy], feed_dict={x:batch[0], y_: batch[1], keep_prob: 0.5})
     if i<=5000:
         _, loss_val = sess.run([train_step1, cross_entropy], feed_dict={x:batch[0], y_: batch[1], keep_prob: 0.5})
