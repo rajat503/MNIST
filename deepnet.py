@@ -88,7 +88,7 @@ loss_val=0
 for i in range(16000):
     batch = mnist.train.next_batch(200)
     if i%1000==0 and i!=0:
-        print("test accuracy %g"%accuracy.eval(feed_dict={x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0}))
+        print("validation accuracy %g"%accuracy.eval(feed_dict={x: mnist.validation.images, y_: mnist.validation.labels, keep_prob: 1.0}))
         train_accuracy = accuracy.eval(feed_dict={x:batch[0], y_: batch[1], keep_prob: 1.0})
         print("step %d"%(i))
         print("training accuracy %g"%(train_accuracy))
