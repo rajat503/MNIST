@@ -76,29 +76,45 @@ b_fc3 = bias_variable([10])
 y_conv=tf.nn.softmax(tf.matmul(h_fc4_drop, W_fc3) + b_fc3)
 
 # cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y_conv), reduction_indices=[1]))
-cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_*tf.log(tf.clip_by_value(y_conv,1e-10,1.0)), reduction_indices=[1]))
+with tf.name_scope('cross_entropy'):
+    cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_*tf.log(tf.clip_by_value(y_conv,1e-10,1.0)), reduction_indices=[1]))
+    tf.scalar_summary('cross entropy', cross_entropy)
+
 train_step1 = tf.train.AdamOptimizer(1e-3).minimize(cross_entropy)
 train_step2 = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
 train_step3 = tf.train.AdamOptimizer(1e-5).minimize(cross_entropy)
-correct_prediction = tf.equal(tf.argmax(y_conv,1), tf.argmax(y_,1))
-accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+
+with tf.name_scope('accuracy'):
+    correct_prediction = tf.equal(tf.argmax(y_conv,1), tf.argmax(y_,1))
+    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+    acc_summary = tf.scalar_summary('accuracy', accuracy)
+
+
+merged = tf.merge_all_summaries()
+train_writer = tf.train.SummaryWriter('./train', sess.graph)
+test_writer = tf.train.SummaryWriter('./test')
+
 sess.run(tf.initialize_all_variables())
 
-loss_val=0
 for i in range(16000):
     batch = mnist.train.next_batch(200)
-    if i%1000==0 and i!=0:
-        print("validation accuracy %g"%accuracy.eval(feed_dict={x: mnist.validation.images, y_: mnist.validation.labels, keep_prob: 1.0}))
-        train_accuracy = accuracy.eval(feed_dict={x:batch[0], y_: batch[1], keep_prob: 1.0})
-        print("step %d"%(i))
-        print("training accuracy %g"%(train_accuracy))
+    if i%100==0:
+        summ = sess.run(acc_summary, feed_dict={x: mnist.validation.images, y_: mnist.validation.labels, keep_prob: 1.0})
+        test_writer.add_summary(summ, i)
+        # val_acc=accuracy.eval(feed_dict={x: mnist.validation.images, y_: mnist.validation.labels, keep_prob: 1.0}))
+        # print("validation accuracy %g"%accuracy.eval(feed_dict={x: mnist.validation.images, y_: mnist.validation.labels, keep_prob: 1.0}))
+        # train_accuracy = accuracy.eval(feed_dict={x:batch[0], y_: batch[1], keep_prob: 1.0})
+        # print("step %d"%(i))
+        # print("training accuracy %g"%(train_accuracy))
     if i%100 == 0 and i!=0:
-        print "loss ", loss_val
+        print "step", i, "loss", loss_val
     if i>=13000:
-        _, loss_val = sess.run([train_step3, cross_entropy], feed_dict={x:batch[0], y_: batch[1], keep_prob: 0.5})
+        _, loss_val, summary = sess.run([train_step3, cross_entropy, merged], feed_dict={x:batch[0], y_: batch[1], keep_prob: 0.5})
     if i>5000 and i<13000:
-        _, loss_val = sess.run([train_step2, cross_entropy], feed_dict={x:batch[0], y_: batch[1], keep_prob: 0.5})
+        _, loss_val, summary = sess.run([train_step2, cross_entropy, merged], feed_dict={x:batch[0], y_: batch[1], keep_prob: 0.5})
     if i<=5000:
-        _, loss_val = sess.run([train_step1, cross_entropy], feed_dict={x:batch[0], y_: batch[1], keep_prob: 0.5})
+        _, loss_val, summary = sess.run([train_step1, cross_entropy, merged], feed_dict={x:batch[0], y_: batch[1], keep_prob: 0.5})
+    if i>100:
+        train_writer.add_summary(summary, i)
 
 print("test accuracy %g"%accuracy.eval(feed_dict={x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0}))
