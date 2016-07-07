@@ -118,3 +118,17 @@ for i in range(16000):
         train_writer.add_summary(summary, i)
 
 print("test accuracy %g"%accuracy.eval(feed_dict={x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0}))
+
+det, pred = sess.run([tf.argmax(y_conv,1), correct_prediction], feed_dict={x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0})
+
+import cv2
+for i in range(len(pred)):
+    if pred[i]==False:
+        x=mnist.test.images[i]*255
+        x=x.reshape(28,28)
+        print "Predicted class", det[i]
+        print "Correct class", mnist.test.labels[i]
+        img = cv2.imshow("a",x)
+        k = cv2.waitKey(0) & 0xFF
+        if k == 27:
+            cv2.destroyAllWindows()
